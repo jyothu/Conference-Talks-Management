@@ -1,49 +1,43 @@
 require 'spec_helper'
+require_relative '../conference'
 
 describe Scheduler do
+  let(:file_name_with_valid_data) { Conference::TALKS_INPUT_FILE_PATH }
 
-  before :all do
-    @list = []
-    File.readlines("#{Dir.pwd}/data/talks.txt").each{|line| @list << Talk.new(line.gsub(/\n/, ''))}
-  end
+  subject { described_class.new(file_name_with_valid_data) }
 
-  describe "#schedule" do
-    before do
-      @tracks = Scheduler.new.schedule(@list)
+  describe '#call' do
+    it 'processes and schedule talks in to tracks' do
+      expect(subject).to receive(:process_input_talks)
+      expect(subject).to receive(:initialize_tracks)
+      expect(subject).to receive(:schedule_talks)
+      expect(subject).to receive(:display_scheduled_talks)
+
+      subject.call
+    end
+
+    it 'processes all talks and creates Talk object' do
+      expect(Talk.count).to eq(19)
+    end
+
+    it 'initializes tracks and should have 2 tracks' do
+      expect(Track.all.size).to eq(2)
     end
 
     it 'schedule talks and returns array of tracks from the given list of talks in which' do
-      @tracks.each do |track|
-        expect(track.morning_session.map(&:length).inject(:+)).to be <= 180
-        expect(track.afternoon_session.map(&:length).inject(:+)).to be <= 240
+      Track.all.each do |track|
+        expect(track.morning_talks.map(&:duration).sum).to be <= 180
+        expect(track.afternoon_talks.map(&:duration).sum).to be <= 240
       end
     end
 
-    it 'should have maximum 2 tracks' do
-      expect(@tracks.length).to eq 2
-    end
+    it 'matches the total tracks duration with the sum of input talks duration' do
+      sum =
+        Track.all.map do |track|
+          track.morning_talks.map(&:duration).sum + track.afternoon_talks.map(&:duration).sum
+        end.sum
 
-    it 'should match the total tracks length with the sum of input talks length' do
-      sum = 0
-      @tracks.each do |track|
-        sum += track.morning_session.map(&:length).inject(:+) + track.afternoon_session.map(&:length).inject(:+)
-      end
-      expect(sum).to eq @list.map(&:length).inject(:+)
+      expect(sum).to eq(Talk.total_minutes)
     end
   end
-
-  describe "#schedule_talks" do
-    before do
-      @talks, @schedule_talks = Scheduler.new.schedule_talks(@list, 180)
-    end
-
-    it 'returns schedule talks and talks by accepting talks & length' do
-      expect(@schedule_talks.map(&:length).inject(:+)).to be <= 180
-    end
-
-    it 'should returns talks by subtracting schedule_talks from @list' do
-      expect(@talks).to eq (@list - @schedule_talks)
-    end
-  end
-
 end
