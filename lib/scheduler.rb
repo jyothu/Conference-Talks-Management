@@ -24,7 +24,7 @@ class Scheduler
   end
 
   def initialize_tracks
-    number_of_tracks.times { track = Track.new }
+    number_of_tracks.times { Track.new }
   end
 
   # Sort talks in descending order by duraion
@@ -35,32 +35,40 @@ class Scheduler
   def schedule_talks
     until available_talks.empty?
       Track.all.each do |track|
-        [MORNING_TALKS, AFTERNOON_TALKS].each do |session_type|
-          scheduled_talks = track.send(session_type)
-          scheduled_talks_total_duration = scheduled_talks.map(&:duration).sum
-
-          assign_talks_to_track(track, scheduled_talks, scheduled_talks_total_duration, session_type)
-        end
+        schedule_talks_for_track(track)
 
         # When a track didn't fill exactly
         # Removing already scheduled last element from track and
         # Again trying for a exact match on available talks
-        # TODO: Not a perfect solution, But, It produces better result
+        # Not a perfect solution, But, It produces better result
         # Kind of backtracking
-        [MORNING_TALKS, AFTERNOON_TALKS].each do |session_type|
-          session_duration = session_duration(session_type)
-          scheduled_talks = track.send(session_type)
-          scheduled_talks_total_duration = scheduled_talks.map(&:duration).sum
-
-          if scheduled_talks_total_duration < session_duration
-            last_unfit_talk_of_track = scheduled_talks.pop
-            available_talks.push(last_unfit_talk_of_track)
-            scheduled_talks_total_duration -= last_unfit_talk_of_track.duration
-
-            assign_talks_to_track(track, scheduled_talks, scheduled_talks_total_duration, session_type)
-          end
-        end
+        backtrack_and_schedule_talks_for_track(track)
       end
+    end
+  end
+
+  def schedule_talks_for_track(track)
+    [MORNING_TALKS, AFTERNOON_TALKS].each do |session_type|
+      scheduled_talks = track.send(session_type)
+      scheduled_talks_total_duration = scheduled_talks.map(&:duration).sum
+
+      assign_talks_to_track(track, scheduled_talks, scheduled_talks_total_duration, session_type)
+    end
+  end
+
+  def backtrack_and_schedule_talks_for_track(track)
+    [MORNING_TALKS, AFTERNOON_TALKS].each do |session_type|
+      session_duration = session_duration(session_type)
+      scheduled_talks = track.send(session_type)
+      scheduled_talks_total_duration = scheduled_talks.map(&:duration).sum
+
+      next unless scheduled_talks_total_duration < session_duration
+
+      last_unfit_talk_of_track = scheduled_talks.pop
+      available_talks.push(last_unfit_talk_of_track)
+      scheduled_talks_total_duration -= last_unfit_talk_of_track.duration
+
+      assign_talks_to_track(track, scheduled_talks, scheduled_talks_total_duration, session_type)
     end
   end
 

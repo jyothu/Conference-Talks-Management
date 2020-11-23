@@ -1,10 +1,10 @@
 class Talk
   attr_accessor :session_time, :title, :duration
 
+  LIGHTNING_DURATION = 5
+
   @@all_talks = []
   @@total_duration = 0
-
-  LIGHTNING_DURATION = 5
 
   def initialize(title)
     @title = title
@@ -42,10 +42,8 @@ class Talk
     minutes = title.match(/\d+/).to_s.to_i
     return minutes unless minutes.zero?
 
-    if title.match?('lightning')
-      LIGHTNING_DURATION
-    else
-      raise 'Invalid talk'
-    end
+    raise 'Invalid talk' unless title.match?('lightning')
+
+    LIGHTNING_DURATION
   end
 end

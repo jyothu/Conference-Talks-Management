@@ -1,5 +1,5 @@
 class Track
-	attr_accessor :morning_talks, :afternoon_talks
+  attr_accessor :morning_talks, :afternoon_talks
 
   MORNING_TALKS_DURATION = 180
   AFTERNOON_TALKS_DURATION = 240
