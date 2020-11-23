@@ -20,11 +20,11 @@ class Talk
 
   class << self
     def count
-      all_talks.size
+      @@all_talks.size
     end
 
     def all
-      all_talks
+      @@all_talks
     end
 
     def dsort
